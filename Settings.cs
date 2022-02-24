@@ -4,16 +4,16 @@ using ImGuiNET;
 namespace Toonsplat;
 
 static class Settings {
-	internal static bool visible;
+	internal static bool isOpen;
 
-	internal static readonly List<Drawing> drawables = new();
-	static Drawing selectedDrawable => drawables[selectedDrawableIndex];
+	internal static readonly List<Drawable> drawables = new();
+	static Drawable selectedDrawable => drawables[selectedDrawableIndex];
 	static int selectedDrawableIndex;
 
 	internal static void Draw() {
-		if (!visible) return;
+		if (!isOpen) return;
 
-		ImGui.Begin("Test Window", ref visible);
+		ImGui.Begin("Test Window", ref isOpen);
 
 		ImGui.BeginGroup();
 		{
@@ -22,7 +22,7 @@ static class Settings {
 			ImGui.ListBox("", ref selectedDrawableIndex, items, items.Length);
 			var addingDrawing = ImGui.Button("+");
 			if (addingDrawing) {
-				drawables.Add(new Drawing());
+				drawables.Add(new Drawable());
 				selectedDrawableIndex = drawables.Count - 1;
 			}
 		}
@@ -35,9 +35,9 @@ static class Settings {
 		{
 			ImGui.InputText("name", ref selectedDrawable.name, 32);
 			ImGui.Separator();
-			ImGui.Combo("type", ref selectedDrawable.type, Drawing.types, Drawing.types.Length);
+			ImGui.Combo("shape", ref selectedDrawable.shapeIndex, Drawable.shapeTypes, Drawable.shapeTypes.Length);
 			ImGui.DragFloat3("position", ref selectedDrawable.position, 0.1f);
-			if (selectedDrawable.type == 0) {
+			if (selectedDrawable.shapeIndex == 0) {
 				ImGui.DragFloat3("position2", ref selectedDrawable.position2, 0.1f);
 				ImGui.DragFloat("width", ref selectedDrawable.widthOrRadius, 0.1f);
 			}
@@ -48,13 +48,13 @@ static class Settings {
 			ImGui.Text("add hitbox size: ");
 			ImGui.SameLine();
 			ImGui.Checkbox("own", ref selectedDrawable.addOwnHitbox);
-			if (selectedDrawable.hostType == 1) {
+			if (selectedDrawable.hostTypeIndex == 1) {
 				ImGui.SameLine();
 				ImGui.Checkbox("host", ref selectedDrawable.addHostHitbox);
 			}
 			ImGui.Separator();
-			ImGui.Combo("relative to", ref selectedDrawable.hostType, Drawing.relators, Drawing.relators.Length);
-			if (selectedDrawable.hostType == 1) {
+			ImGui.Combo("relative to", ref selectedDrawable.hostTypeIndex, Drawable.hostTypes, Drawable.hostTypes.Length);
+			if (selectedDrawable.hostTypeIndex == 1) {
 				ImGui.InputText("object filter", ref selectedDrawable.objectFilter, 32);
 				ImGui.Checkbox("targetable", ref selectedDrawable.targetableHosts);
 				ImGui.SameLine();

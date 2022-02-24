@@ -2,10 +2,10 @@
 
 namespace Toonsplat;
 
-internal sealed class Drawing {
+internal sealed class Drawable {
 	internal string name = "";
 
-	internal int type;
+	internal int shapeIndex;
 	internal Vector3 position;
 	internal Vector3 position2;
 	internal float angle = 90f;
@@ -13,7 +13,7 @@ internal sealed class Drawing {
 	internal bool addOwnHitbox;
 	internal bool addHostHitbox;
 
-	internal int hostType;
+	internal int hostTypeIndex;
 	internal string objectFilter = "";
 	internal bool targetableHosts = true;
 	internal bool untargetableHosts = true;
@@ -24,6 +24,6 @@ internal sealed class Drawing {
 	internal bool fill = true;
 	internal float lineThickness = 2f;
 
-	internal static readonly string[] types = { "rectangle/line", "cone/circle" };
-	internal static readonly string[] relators = { "world", "object(s)" };
+	internal static readonly string[] shapeTypes = { "rectangle/line", "cone/circle" };
+	internal static readonly string[] hostTypes = { "world", "object(s)", "self", "target" };
 }

@@ -20,24 +20,34 @@ static class Canvas {
 		var drawList = ImGui.GetWindowDrawList();
 
 		foreach (var drawable in Settings.drawables) {
+			var localPlayer = Plugin.ClientState.LocalPlayer;
+			var target = localPlayer.TargetObject;
+
 			var hosts =
-				drawable.hostType == 1
+				drawable.hostTypeIndex == 1
 					? Plugin.ObjectTable
 						.Where(gameObject => gameObject.Name.ToString().Contains(drawable.objectFilter))
 						.ToList()
 						.ConvertAll(static gameObject => (gameObject.Position, gameObject.HitboxRadius, gameObject.Rotation))
-					: new List<(Vector3, float, float)> { (Vector3.Zero, 0f, 0f) };
+					: new List<(Vector3, float, float)> {
+						drawable.hostTypeIndex switch {
+							0 => (Vector3.Zero, 0f, 0f),
+							2 => (localPlayer.Position, localPlayer.HitboxRadius, localPlayer.Rotation),
+							3 => (target.Position, target.HitboxRadius, target.Rotation),
+							_ => throw new ArgumentOutOfRangeException()
+						}
+					};
 
 			foreach (var (hostPosition, hostHitboxSize, hostRotation) in hosts) {
 				var finalWidthOrRadius = drawable.widthOrRadius;
 				if (drawable.addOwnHitbox) ; //finalWidthOrRadius +=
 				if (drawable.addHostHitbox) finalWidthOrRadius += hostHitboxSize;
 
-				var originInWorld = hostPosition + drawable.position;
+				var originInWorld = hostPosition + drawable.position.Rotate(hostRotation);
 				Plugin.GameGui.WorldToScreen(originInWorld, out var originOnScreen);
 
-				if (drawable.type == 0) { // rect / line
-					var endInWorld = hostPosition + drawable.position2;
+				if (drawable.shapeIndex == 0) { // rect / line
+					var endInWorld = hostPosition + drawable.position2.Rotate(hostRotation);
 
 					if (finalWidthOrRadius == 0) { //line
 						Plugin.GameGui.WorldToScreen(endInWorld, out var endOnScreen);
@@ -49,18 +59,29 @@ static class Canvas {
 							drawable.lineThickness
 						);
 					} else { //quad
-						Plugin.GameGui.WorldToScreen(originInWorld + new Vector3(-finalWidthOrRadius / 2, 0, 0), out var p1OnScreen);
-						Plugin.GameGui.WorldToScreen(originInWorld + new Vector3(finalWidthOrRadius / 2, 0, 0), out var p2OnScreen);
-						Plugin.GameGui.WorldToScreen(endInWorld + new Vector3(finalWidthOrRadius / 2, 0, 0), out var p3OnScreen);
-						Plugin.GameGui.WorldToScreen(endInWorld + new Vector3(-finalWidthOrRadius / 2, 0, 0), out var p4OnScreen);
+						Plugin.GameGui.WorldToScreen(originInWorld + new Vector3(-finalWidthOrRadius / 2, 0, 0).Rotate(hostRotation), out var p1OnScreen);
+						Plugin.GameGui.WorldToScreen(originInWorld + new Vector3(finalWidthOrRadius / 2, 0, 0).Rotate(hostRotation), out var p2OnScreen);
+						Plugin.GameGui.WorldToScreen(endInWorld + new Vector3(finalWidthOrRadius / 2, 0, 0).Rotate(hostRotation), out var p3OnScreen); //todo: fix rect width only working in 1 direction
+						Plugin.GameGui.WorldToScreen(endInWorld + new Vector3(-finalWidthOrRadius / 2, 0, 0).Rotate(hostRotation), out var p4OnScreen);
 
-						drawList.AddQuadFilled(
-							p1OnScreen,
-							p2OnScreen,
-							p3OnScreen,
-							p4OnScreen,
-							ImGui.ColorConvertFloat4ToU32(drawable.color)
-						);
+						if (drawable.fill) {
+							drawList.AddQuadFilled(
+								p1OnScreen,
+								p2OnScreen,
+								p3OnScreen,
+								p4OnScreen,
+								ImGui.ColorConvertFloat4ToU32(drawable.color)
+							);
+						} else {
+							drawList.AddQuad(
+								p1OnScreen,
+								p2OnScreen,
+								p3OnScreen,
+								p4OnScreen,
+								ImGui.ColorConvertFloat4ToU32(drawable.color),
+								drawable.lineThickness
+							);
+						}
 					}
 				} else { // cone / circle
 					var totalRadians = drawable.angle / 180f * Math.PI;
@@ -71,11 +92,11 @@ static class Canvas {
 					for (var vertexIndex = 0; vertexIndex < segmentCount + 1; vertexIndex++) {
 						var vertexRadians = totalRadians / 2 - totalRadians * (vertexIndex / (float)segmentCount);
 
-						var vertexInWorld = new Vector3(
+						var vertexInWorld = (new Vector3(
 							(float)Math.Sin(vertexRadians),
 							0f,
 							(float)Math.Cos(vertexRadians)
-						) * finalWidthOrRadius;
+						) * finalWidthOrRadius).Rotate(hostRotation); //todo: format
 
 						Plugin.GameGui.WorldToScreen(originInWorld + vertexInWorld, out var vertexOnScreen);
 						vertices.Add(vertexOnScreen);
@@ -109,21 +130,14 @@ static class Canvas {
 		ImGui.End();
 	}
 
-	private static Vector2 RotateAndMapToScreen(Vector3 point, Vector3 pivot, float rotation, bool ignoreRotation) {
-		var point2d = new Vector2(point.X, point.Z);
-		var pivot2d = new Vector2(pivot.X, pivot.Z);
+	private static Vector3 Rotate(this Vector3 point, float angle) {
+		var sin = (float)Math.Sin(-angle);
+		var cos = (float)Math.Cos(-angle);
 
-		point2d -= pivot2d; // temporarily translate point to origin:
-
-		var sin = (float)Math.Sin(rotation);
-		var cos = (float)Math.Cos(rotation);
-		point2d.X = point2d.X * cos - point2d.Y * sin;
-		point2d.Y = point2d.X * sin + point2d.Y * cos;
-
-		// translate point back:
-		point2d += pivot2d;
-
-		Plugin.GameGui.WorldToScreen(new Vector3(point2d.X, point.Y, pivot2d.Y), out var pointOnScreen);
-		return pointOnScreen;
+		return new Vector3(
+			point.X * cos - point.Z * sin,
+			point.Y,
+			point.Z = point.X * sin + point.Z * cos
+		);
 	}
 }
