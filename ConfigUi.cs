@@ -7,7 +7,32 @@ namespace Toonsplat;
 static class ConfigUi {
 	internal static bool isOpen;
 
-	internal static readonly List<Drawable> drawables = new();
+	internal static readonly List<Drawable> drawables = new() {
+		new Drawable {
+			name = "red edge",
+			hostTypeIndex = 2,
+			position = new Vector3(0f, 1.5f, 0f),
+			position2 = new Vector3(1f, 1f, 5f),
+			widthOrRadius = 0f,
+			color = new Vector4(255f, 0f, 0f, 255f)
+		},
+		new Drawable {
+			name = "green edge",
+			hostTypeIndex = 2,
+			position = new Vector3(0f, 1.5f, 0f),
+			position2 = new Vector3(-1f, 1f, 5f),
+			widthOrRadius = 0f,
+			color = new Vector4(0f, 255f, 0f, 255f)
+		},
+		new Drawable {
+			name = "blue edge",
+			hostTypeIndex = 2,
+			position = new Vector3(0f, 1.5f, 0f),
+			position2 = new Vector3(0f, 2f, 5f),
+			widthOrRadius = 0f,
+			color = new Vector4(0f, 0f, 255f, 255f)
+		}
+	};
 	static Drawable selectedDrawable => drawables[selectedDrawableIndex];
 	static int selectedDrawableIndex;
 
