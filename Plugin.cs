@@ -21,9 +21,9 @@ sealed class Plugin : IDalamudPlugin {
 		ObjectTable = objectTable;
 		ClientState = clientState;
 		(pluginInterface.GetPluginConfig() as Configuration ?? new Configuration()).Initialize(pluginInterface);
-		pluginInterface.UiBuilder.Draw += Settings.Draw;
+		pluginInterface.UiBuilder.Draw += ConfigUi.Draw;
 		pluginInterface.UiBuilder.Draw += Canvas.Draw;
-		pluginInterface.UiBuilder.OpenConfigUi += static () => Settings.isOpen = true;
+		pluginInterface.UiBuilder.OpenConfigUi += static () => ConfigUi.isOpen = true;
 	}
 
 	public void Dispose() {
